@@ -18,12 +18,18 @@ public class Controller {
     long timeInMilliseconds = 0L;
     long timeSwapBuff = 0L;
 
-    public Controller() {
+    long excersiseDurationInMs;
+
+    private String TAG="Fitness";
+
+    public Controller(long excerciseDuration) {
+        excersiseDurationInMs = excerciseDuration * 1000;
     }
 
     public void setSetValues(SetValues mSetValues) {
         setValues = mSetValues;
     }
+
     public Uri getVideoUri(String packagename) {
         return businessUtils.getVideoUri(packagename);
     }
@@ -38,25 +44,23 @@ public class Controller {
         customHandler.removeCallbacks(updateTimerThread);
     }
 
+    public void stopTimerThread() {
+        customHandler.removeCallbacks(updateTimerThread);
+    }
+
     Runnable updateTimerThread = new Runnable() {
         long updatedTime = 0L;
 
         public void run() {
             timeInMilliseconds = SystemClock.uptimeMillis() - startTime;
             updatedTime = timeSwapBuff + timeInMilliseconds;
-            String timeString = businessUtils.getTimeToShow(updatedTime);
+            long timeRemaining = excersiseDurationInMs - updatedTime;
+            String timeString = businessUtils.getTimeToShow(timeRemaining);
             setValues.setTimerValueToUI(timeString);
-            Log.d("Controller","In Controller: time in ms:"+updatedTime+", "+timeString);
-            if(updatedTime>0)
-            customHandler.postDelayed(this, 0);
+            Log.i(TAG, "Time remaining :"+ timeString);
+            if (updatedTime > 0)
+                customHandler.postDelayed(this, 0);
         }
     };
 
 }
-
-// 1) show time in hr:min:sec and not in min:sec:ms
-// 2) stop the Handler when the time has elapsed and show the alertDialog asking for entering repetion count
-// 3) in back button handling only show the alertDialgo if the time has not elapsed as if time is elapsed rep count dialog will be shown by a call from handler.
-// 4) On orientation changes handle state of timer.
-
-

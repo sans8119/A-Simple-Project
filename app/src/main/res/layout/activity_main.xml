@@ -22,7 +22,7 @@
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="37dp"
         android:text="@string/timerVal"
-        android:textColor="#ffffff"
+        android:textColor="#B3ffffff"
         android:textSize="40sp"
         android:background="#60CCCCCC"
 

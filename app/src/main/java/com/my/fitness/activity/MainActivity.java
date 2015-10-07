@@ -38,29 +38,38 @@ public class MainActivity extends AppCompatActivity {
     private ProgressDialog progressDialog;
     private MediaController mediaControls;
     private Controller controller;
-    public final String MYPREFERENCES="my_preferences";
-    public final String REP_KEY="repetition_count";
+    public final String MYPREFERENCES = "my_preferences";
+    public final String REP_KEY = "repetition_count";
 
     private BlankFragment blankFragment;
     private final String BLANK_FRAGMENT = "blank_fragment";
+    private boolean skipped;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        Log.d("controller", "exc:" + getResources().getString(R.string.duration_in_sec));
+        //Log.d("controller","2vexc:"+getResources().getString(R.string.duration_in_sec));
+        long excerciseDuration = Long.parseLong(getResources().getString(R.string.duration_in_sec));
         blankFragment = (BlankFragment) getSupportFragmentManager()
                 .findFragmentByTag(BLANK_FRAGMENT);
         if (blankFragment == null) {
             blankFragment = new BlankFragment();
             getSupportFragmentManager().beginTransaction().add(blankFragment, BLANK_FRAGMENT).commit();
+            controller = new Controller(excerciseDuration);
+            blankFragment.setController(controller);
+        } else {
+            controller = blankFragment.getController();
         }
-        controller = blankFragment.getController();
+
         controller.setSetValues(new SetValues() {
             @Override
             public void setTimerValueToUI(String timeString) {
                 timerValue.setText(timeString);
-                if(timeString.trim().equals("00:00:00")){
+                if (timeString.trim().equals("00:00:00")) {
                     enterRepetionCount(true);
                 }
             }
@@ -90,33 +99,41 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onStop(){
-        if(progressDialog.isShowing())
+    public void onStop() {
+        super.onStop();
+        controller.stopTimerThread();
+        if (progressDialog.isShowing())
             progressDialog.dismiss();
     }
 
     @OnClick(R.id.startButton)
-    public void startButtonClickHandler(){
-        if(startButton.getText().toString().trim().equals(getResources().getString(R.string.startButtonLabel))){
+    public void startButtonClickHandler() {
+        if (startButton.getText().toString().trim().equals(getResources().getString(R.string.startButtonLabel))) {
             controller.handleStart();
-            startButton.setText(getResources().getString(R.string.skipButtonLabel));
-        }else{
+            startButton.setText(getResources().getString(R.string.pauseButtonLabel));
+        } else {
             controller.handlePause();
             startButton.setText(getResources().getString(R.string.startButtonLabel));
         }
     }
 
     @OnClick(R.id.skipButton)
-    public void skipButtonClickHandler(){
+    public void skipButtonClickHandler() {
+        skipped=true;
         enterRepetionCount(false);
     }
 
     @Override
     public void onBackPressed() {
-        enterRepetionCount(true);
+        if(skipped){
+            super.onBackPressed();
+        }else{
+            enterRepetionCount(true);
+        }
+
     }
 
-    private void enterRepetionCount(final boolean finishActivity){
+    private void enterRepetionCount(final boolean finishActivity) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Repetetion Count");
         final EditText input = new EditText(this);
@@ -125,13 +142,15 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                int repetions = Integer.parseInt(input.getText().toString().trim());
+                int repetions = 0;
+                if (input.getText().toString().trim().length() != 0)
+                    repetions = Integer.parseInt(input.getText().toString().trim());
                 SharedPreferences sharedpreferences = getSharedPreferences(MYPREFERENCES, Context.MODE_PRIVATE);
                 SharedPreferences.Editor ed = sharedpreferences.edit();
                 ed.putInt(REP_KEY, repetions);
                 ed.commit();
+                controller.stopTimerThread();
                 if (finishActivity) {
-                    dialog.cancel();
                     MainActivity.this.finish();
                 } else {
                     dialog.cancel();
@@ -147,10 +166,10 @@ public class MainActivity extends AppCompatActivity {
         builder.show();
     }
 
-    private void showDialog(){
+    private void showDialog() {
         progressDialog = new ProgressDialog(this);
-        progressDialog.setTitle("Loading video");
-        progressDialog.setMessage("Loading...");
+        progressDialog.setTitle(getResources().getString(R.string.loading_video));
+        progressDialog.setMessage(getResources().getString(R.string.loading));
         progressDialog.setCancelable(false);
         progressDialog.show();
     }
@@ -160,14 +179,13 @@ public class MainActivity extends AppCompatActivity {
     public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
         blankFragment.setPosition(myVideoView.getCurrentPosition());
-        //savedInstanceState.putInt("Position", myVideoView.getCurrentPosition());
         myVideoView.pause();
     }
 
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        position =blankFragment.getPosition();
+        position = blankFragment.getPosition();
         myVideoView.seekTo(position);
     }
 

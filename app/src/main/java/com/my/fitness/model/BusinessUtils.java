@@ -13,16 +13,9 @@ public class BusinessUtils {
     }
 
     public String getTimeToShow(long millis) {
-       return String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(millis),
+        return String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(millis),
                 TimeUnit.MILLISECONDS.toMinutes(millis) % TimeUnit.HOURS.toMinutes(1),
                 TimeUnit.MILLISECONDS.toSeconds(millis) % TimeUnit.MINUTES.toSeconds(1));
-       /* int secs = (int) (updatedTime / 1000);
-        int mins = secs / 60;
-        secs = secs % 60;
-        int milliseconds = (int) (updatedTime % 1000);
-        return ("" + mins + ":"
-                + String.format("%02d", secs) + ":"
-                + String.format("%03d", milliseconds));*/
     }
 
 }
